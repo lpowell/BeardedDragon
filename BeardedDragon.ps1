@@ -57,13 +57,16 @@ function GatherInfo(){
         $global:ActiveDirectoryGroup = get-adgroup -Filter * | ConvertTo-HTML -Fragment -As Table
 
         # begin weird -Path is not relative for some reason fix
-        # $loc = (Get-Location).Path # Idk why this still isn't working. It just hates being put with the other files ig.
+         $loc = (Get-Location).Path 
+        # Idk why this still isn't working. It just hates being put with the other files ig.
         # write-host "where is this going tho fr"
         # $locc = $loc+"\Site\GPO.html"
         # Get-GPOReport -All -ReportType HTML -Path $locc
         # write-host "$loc\Site\GPO.html"
         # Write-Host $locc
-        Get-GPOReport -All -ReportType HTML -Path C:\Users\Administrator\Documents\GitHub\BeardedDragon\Site\GPO.html
+        # literally doesn't work even when hardcoded why
+        # Get-GPOReport -All -ReportType HTML -Path C:\Users\Administrator\Documents\GitHub\BeardedDragon\Site\GPO.html
+        Get-GPOReport -All -ReportType HTML -Path $loc\GPO.html
     }
     Write-Progress -Completed True
 }
@@ -127,7 +130,7 @@ function CreateNavigation(){
                 <a href=`"ActiveDirectory.html`"> Active Directory </a>
             </th>
             <th>
-                <a href=`"GPO.html`"> Group Policy </a>
+                <a href=`"..\GPO.html`"> Group Policy </a>
             </th>
 "@
         $NavStart += $ActiveDirectoryInject
@@ -257,4 +260,4 @@ GenerateReport
 CreateBackup
 
 # Open Index
-iexplore.exe Site\Index.html
+start Site\Index.html
