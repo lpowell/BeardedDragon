@@ -57,10 +57,12 @@ function GatherInfo(){
         $global:ActiveDirectoryGroup = get-adgroup -Filter * | ConvertTo-HTML -Fragment -As Table
 
         # begin weird -Path is not relative for some reason fix
-        $loc = (Get-Location).Path
+        $loc = (Get-Location).Path # Idk why this still isn't working. It just hates being put with the other files ig
         write-host "where is this going tho fr"
-        Get-GPOReport -All -ReportType HTML -Path "$loc\Site\GPO.html"
+        $locc = $loc+"\Site\GPO.html"
+        Get-GPOReport -All -ReportType HTML -Path $locc
         write-host "$loc\Site\GPO.html"
+        Write-Host $locc
     }
     Write-Progress -Completed True
 }
