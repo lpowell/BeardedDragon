@@ -58,7 +58,7 @@ function GatherInfo(){
 
         # begin weird -Path is not relative for some reason fix
         $loc = (Get-Location).Path
-        Get-GPOReport -All -ReportType HTML -Path $loc\GPO.html 
+        Get-GPOReport -All -ReportType HTML -Path $loc\Site\GPO.html 
     }
     Write-Progress -Completed True
 }
