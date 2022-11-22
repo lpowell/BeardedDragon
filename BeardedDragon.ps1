@@ -48,7 +48,8 @@ function GatherInfo(){
     $global:NetFull = Get-NetTCPConnection | Select-Object State, LocalAddress, LocalPort, RemoteAddress, RemotePort, OwningProcess, CreationTime | ConvertTo-HTML -Fragment -As Table
     
     # Could this be a single array? Yes.
-    if(ActiveDirectory){
+    if(Get-WindowsFeature -Name AD-Domain-Services){
+        $global:ActiveDirectory = $True){
         Write-Progress -Activity "Gathering Active Directory Information..."
         $global:ActiveDirectoryDomain = get-addomain | ConvertTo-HTML -Fragment -As Table
         $global:ActiveDirectoryUser = get-aduser -Filter * | ConvertTo-HTML -Fragment -As Table
@@ -112,8 +113,7 @@ function CreateNavigation(){
                 <a href=`"Network.html`"> Network </a>
             </th> 
 "@
-    if(Get-WindowsFeature -Name AD-Domain-Services){
-        $global:ActiveDirectory = $True
+    if(ActiveDirectory){
         $ActiveDirectoryInject = @"
             <th>
                 <a href=`"ActiveDirectory.html`"> Active Directory </a>
