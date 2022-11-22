@@ -1,0 +1,241 @@
+param($Name, $Device, $Competition, [switch]$help, [switch]$version)
+
+# Help menu
+function help(){
+    Write-host "BeardedDragon"
+    Write-Host "Windows enumeration script that generates an HTML report"
+    Write-Host "Example Usage`n`n`t.\BeardedDragon.ps1 -Name `"Liam Powell`" -Device `"2012 Active Directory`" -Competition `"Regionals`"`n"
+    Write-Host "Usage:"
+    Write-Host "`t-Name`n`t`tName of report author"
+    Write-Host "`tDevice`n`t`tName of the device"
+    Write-Host "`tCompetition`n`t`tCompetition level"
+    Write-Host "`tHelp`n`t`tDisplay this help menu"
+}
+
+function GlobalOptions(){
+    $global:ErrorActionPreference="SilentlyContinue"
+}
+
+function CreateDirectory(){
+    # Create the site directrory 
+    if(get-item -Path Site){
+        return
+    }
+    New-Item -Path Site -ItemType Directory
+}
+
+function CreateBackup(){
+    # Create the site backup
+    Write-Progress -Activity "Zipping Site..."
+    Compress-Archive -Path .\Site\ -DestinationPath .\"Enum-Backup-$(Get-Date -Format "MM-dd-yyyy_HH_mm")"
+    Write-Progress -Completed True
+}
+
+function GatherInfo(){
+    # Load Info together, its slooooooooooooowwwwwwwwwwwwwww
+    Write-Progress -Activity "Gathering Process Information..."
+    $global:ProcessInformation = Get-CimInstance Win32_Process | Select-Object ProcessName, Path, CreationDate, CommandLine | ConvertTo-HTML -Fragment -As Table
+    Write-Progress -Activity "Gather Service Information..."
+    $global:ServiceInformation = Get-CimInstance Win32_Service | Select-Object Name, PathName, Caption, Description, State | ConvertTo-HTML -Fragment -As Table
+    Write-Progress -Activity "Gathering Local Account Information..."
+    $global:LocalUser = Get-LocalUser | Select-Object Name, Enabled, LastLogon, PasswordRequired, Description, SID | ConvertTo-HTML -Fragment
+    $global:LocalGroup = Get-LocalGroup | Select-Object Name, Description, SID | ConvertTo-HTML -Fragment
+    Write-Progress -Activity "Gathering Scheduled Task Information..."
+    $global:ScheduledTasks = Get-ScheduledTask |Select-Object TaskName, Author, State, Description, TaskPath | ConvertTo-HTML -Fragment -As Table
+    Write-Progress -Activity "Gathering Networking Information..." 
+    $global:NetEstablished = Get-NetTCPConnection | ? State -eq "Established" | Select-Object LocalAddress, LocalPort, RemoteAddress, RemotePort, OwningProcess, CreationTime | ConvertTo-HTML -Fragment -As Table
+    $global:NetListen = Get-NetTCPConnection | ? State -eq "Listen" | Select-Object LocalAddress, LocalPort, RemoteAddress, RemotePort, OwningProcess, CreationTime | ConvertTo-HTML -Fragment -As Table
+    $global:NetFull = Get-NetTCPConnection | Select-Object State, LocalAddress, LocalPort, RemoteAddress, RemotePort, OwningProcess, CreationTime | ConvertTo-HTML -Fragment -As Table
+    
+    # Could this be a single array? Yes.
+    if(ActiveDirectory){
+        Write-Progress -Activity "Gathering Active Directory Information..."
+        $global:ActiveDirectoryDomain = get-addomain | ConvertTo-HTML -Fragment -As Table
+        $global:ActiveDirectoryUser = get-aduser -Filter * | ConvertTo-HTML -Fragment -As Table
+        $global:ActiveDirectoryComputer = get-adcomputer -Filter * | ConvertTo-HTML -Fragment -As Table
+        $global:ActiveDirectoryGroup = get-adgroup -Filter * | ConvertTo-HTML -Fragment -As Table
+        $global:ActiveDirectoryGPO = get-GPOReport -All -ReportType HTML -Path Site\GPO.html 
+    }
+    Write-Progress -Completed True
+}
+
+function CreateTemplate(){
+    # Create the HTML template for the webpages
+    if(Get-Item -Path Site\header.html){
+        Get-ChildItem Site | %{rm $_.FullName}
+    }
+    $Header=@'
+    <style>
+        #Device {position: absolute; top: 2%; left: 2%; padding: 0px 0px;}
+        #Author { float: left; padding: 0px 100px; }
+        #Device, #Author { display: inline;}
+        #Content { float: center; top: %5; clear:both;} 
+        a:link { color: #000000;}
+        a:visited { color: #000000;}
+        h1, h5, th { text-align: center; font-family: Segoe UI;}
+        table { margin: auto; font-family: Segoe UI; box-shadow: 10px 10px 5px #888; border: thin ridge grey; }
+        th { background: #0046c3; color: #fff; max-width: 400px; padding: 5px 10px; text-wrap:normal; word-wrap:break-word;}
+        td { font-size: 11px; padding: 5px 20px; color: #000; max-width: 600px; text-wrap:normal; word-wrap:break-word; }
+        tr { background: #b8d1f3; text-wrap:normal; word-wrap:break-word}
+        tr:nth-child(even){ background: #dae5f4; text-wrap:normal; word-wrap:break-word;}
+        p { text-align: center;}
+        .Summary { margin: auto; overflow: hidden;}
+        iframe { margin: auto; width: 1200; height: 400; display:block; border: 0px;}
+    </style>
+
+'@ +"    <h1> Enumeration Started $(Get-Date) </h1>"
+    Out-File -InputObject $Header -FilePath Site\header.html
+}
+
+function CreateNavigation(){
+    # Role based navigation menu
+    # Infinitely expandable by filtering features and adding before closing statement
+    $NavStart = @"
+    <table style=`"font-color: #000000;`">
+        <tr>
+            <th>
+                <a href =`"Index.html`"> Home </a>
+            </th>
+            <th>
+                <a href=`"Processes.html`"> Processes </a>
+            </th>
+            <th>
+                <a href=`"Services.html`"> Services </a>
+            </th>
+            <th>
+                <a href=`"Local.html`"> Local Accounts </a>
+            </th>
+            <th>
+                <a href=`"Tasks.html`"> Tasks </a>
+            </th>
+            <th>
+                <a href=`"Network.html`"> Network </a>
+            </th> 
+"@
+    if(Get-WindowsFeature -Name AD-Domain-Services){
+        $global:ActiveDirectory = $True
+        $ActiveDirectoryInject = @"
+            <th>
+                <a href=`"ActiveDirectory.html`"> Active Directory </a>
+            </th>
+            <th>
+                <a href=`"GPO.html`"> Group Policy </a>
+            </th>
+"@
+        $NavStart += $ActiveDirectoryInject
+    }
+    $NavStart += @"
+
+        </tr>
+    </table>
+"@
+    Add-Content -Value $NavStart -Path Site\header.html
+}
+
+function CreateAuthorBlock(){
+    # Create the author and device info block
+    $global:DeviceInfo = Get-CimInstance CIM_ComputerSystem 
+    $AuthBlock = @"
+    <!--
+        Author: {0} 
+        Device: {1} 
+        Competition: {2} 
+    -->
+    <div id=Device>
+        <h4> Device Name: {3} </h4>
+        <h4> Domain: {4} </h4>
+        <h4> User: {5} </h4>
+    </div>
+"@ -f $Name, $Device, $Competition, $DeviceInfo.Name, $DeviceInfo.Domain, $DeviceInfo.UserName
+    Add-Content -Value $AuthBlock -Path Site\header.html
+}
+
+function GenerateReport(){
+# Create the report
+    $Header = Get-Content -Path Site\header.html -Raw
+    $HTMLStart = @"
+    <!DOCTYPE html>
+    <HTML>
+        <head>
+        {0}
+        </head>
+        <body>
+            <div id=Content>
+                <h1 id="title">
+                <script>
+                    var fileName = location.href.split("/").slice(-1); 
+                    var out = String(fileName).split(".");
+                    document.getElementById("title").innerHTML = out[0];
+                </script>
+"@ -f $header
+    $HTMLEnd = @"
+                </h1>
+            </div>
+        </body>
+    </HTML>
+"@
+
+    # Create Process Information Page
+    Out-File -InputObject $HTMLStart -FilePath Site\Processes.html
+    Add-Content -Value $ProcessInformation -Path Site\Processes.html
+    Add-Content -Value $HTMLEnd -Path Site\Processes.html
+
+    # Create Service Information Page
+    Out-File -InputObject $HTMLStart -FilePath Site\Services.html
+    Add-Content -Value $ServiceInformation -Path Site\Services.html
+    Add-Content -Value $HTMLEnd -Path Site\Services.html
+
+    # Create Local Account Information Page
+    Out-File -InputObject $HTMLStart -FilePath Site\Local.html
+    Add-Content -Value $LocalUSer -Path Site\Local.html
+    Add-Content -Value "<h1> Groups </h1>" -Path Site\Local.html
+    Add-Content -Value $LocalGroup -Path Site\Local.html
+    Add-Content -Value $HTMLEnd -Path Site\Local.html
+
+    # Create Scheduled Task Information Page
+    Out-File -InputObject $HTMLStart -FilePath Site\Tasks.html
+    Add-Content -Value $ScheduledTasks -Path Site\Tasks.html
+    Add-Content -Value $HTMLEnd -Path Site\Tasks.html
+
+    # Create Network Information Page
+    Out-File -InputObject $HTMLStart -FilePath Site\Network.html
+    Add-Content -Value "<h1> Established </h1>" -Path Site\Network.html
+    Add-Content -Value $NetEstablished -Path Site\Network.html
+    Add-Content -Value "<h1> Listening </h1>" -Path Site\Network.html
+    Add-Content -Value $NetListen -Path Site\Network.html
+    Add-Content -Value "<h1> Full </h1>" -Path Site\Network.html
+    Add-Content -value $NetFull -Path Site\Network.html
+    Add-Content -Value $HTMLEnd -Path Site\Network.html
+
+    if($ActiveDirectory){
+    # Create Process Information Page
+    Out-File -InputObject $HTMLStart -FilePath Site\ActiveDirectory.html
+    Add-Content -Value "<h1> Domain </h1>" -Path Site\ActiveDirectory.html
+    Add-Content -Value $ActiveDirectoryDomain -Path Site\ActiveDirectory.html
+    Add-Content -Value "<h1> Users </h1>" -Path Site\ActiveDirectory.html
+    Add-Content -Value $ActiveDirectoryUser -Path Site\ActiveDirectory.html
+    Add-Content -Value "<h1> Groups </h1>" -Path Site\ActiveDirectory.html
+    Add-Content -Value $ActiveDirectoryGroup -Path Site\ActiveDirectory.html
+    Add-Content -Value "<h1> Computers </h1>" -Path Site\ActiveDirectory.html
+    Add-Content -Value $ActiveDirectoryComputer -Path Site\ActiveDirectory.html
+    Add-Content -Value $HTMLEnd -Path Site\Network.html
+    }
+
+# Finish index 
+    $HTMLStart += $HTMLEnd
+
+Out-File -InputObject $HTMLStart -FilePath Site\Index.html
+}
+
+# Script start
+GlobalOptions
+GatherInfo
+CreateDirectory
+CreateTemplate
+CreateNavigation
+CreateAuthorBlock
+GenerateReport
+CreateBackup
+
+# Open Index
+start Site\Index.html
