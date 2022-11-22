@@ -66,8 +66,11 @@ function GatherInfo(){
         # Write-Host $locc
         # literally doesn't work even when hardcoded why
         # Get-GPOReport -All -ReportType HTML -Path C:\Users\Administrator\Documents\GitHub\BeardedDragon\Site\GPO.html
-        $locc = $loc+"\Site"
-        Get-GPOReport -All -ReportType HTML -Path $locc\GPO.html
+        # $locc = $loc+"\Site"
+
+        # Screw PS, I do what I want
+        Get-GPOReport -All -ReportType HTML -Path $loc\GPO.html
+        Copy-Item -Path GPO.html -Destination Site\GPO.html
     }
     Write-Progress -Completed True
 }
