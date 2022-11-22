@@ -66,7 +66,8 @@ function GatherInfo(){
         # Write-Host $locc
         # literally doesn't work even when hardcoded why
         # Get-GPOReport -All -ReportType HTML -Path C:\Users\Administrator\Documents\GitHub\BeardedDragon\Site\GPO.html
-        Get-GPOReport -All -ReportType HTML -Path $loc\GPO.html
+        $locc = $loc+"\Site"
+        Get-GPOReport -All -ReportType HTML -Path $locc\GPO.html
     }
     Write-Progress -Completed True
 }
@@ -130,7 +131,7 @@ function CreateNavigation(){
                 <a href=`"ActiveDirectory.html`"> Active Directory </a>
             </th>
             <th>
-                <a href=`"..\GPO.html`"> Group Policy </a>
+                <a href=`"GPO.html`"> Group Policy </a>
             </th>
 "@
         $NavStart += $ActiveDirectoryInject
