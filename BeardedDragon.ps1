@@ -55,7 +55,10 @@ function GatherInfo(){
         $global:ActiveDirectoryUser = get-aduser -Filter * | ConvertTo-HTML -Fragment -As Table
         $global:ActiveDirectoryComputer = get-adcomputer -Filter * | ConvertTo-HTML -Fragment -As Table
         $global:ActiveDirectoryGroup = get-adgroup -Filter * | ConvertTo-HTML -Fragment -As Table
-        Get-GPOReport -All -ReportType HTML -Path Site\GPO.html 
+
+        # begin weird -Path is not relative for some reason fix
+        $loc = (Get-Location).Path
+        Get-GPOReport -All -ReportType HTML -Path $loc\GPO.html 
     }
     Write-Progress -Completed True
 }
