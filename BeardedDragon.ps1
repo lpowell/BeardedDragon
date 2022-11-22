@@ -9,7 +9,7 @@ function help(){
     Write-Host "`t-Name`n`t`tName of report author"
     Write-Host "`tDevice`n`t`tName of the device"
     Write-Host "`tCompetition`n`t`tCompetition level"
-    Write-Host "`tHelp`n`t`tDisplay this help menu"
+    Write-Host "`tHelp`n`t`tDisplay this help menu`n"
 }
 
 function GlobalOptions(){
@@ -225,6 +225,17 @@ function GenerateReport(){
     $HTMLStart += $HTMLEnd
 
 Out-File -InputObject $HTMLStart -FilePath Site\Index.html
+}
+
+# Parse parameters
+if($help){
+    help
+    exit
+}
+if($version){
+    Write-Host "BeardedDragon"
+    Write-Host "Version: 1.0.0"
+    exit
 }
 
 # Script start
