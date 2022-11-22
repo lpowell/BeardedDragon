@@ -55,7 +55,7 @@ function GatherInfo(){
         $global:ActiveDirectoryUser = get-aduser -Filter * | ConvertTo-HTML -Fragment -As Table
         $global:ActiveDirectoryComputer = get-adcomputer -Filter * | ConvertTo-HTML -Fragment -As Table
         $global:ActiveDirectoryGroup = get-adgroup -Filter * | ConvertTo-HTML -Fragment -As Table
-        $global:ActiveDirectoryGPO = get-GPOReport -All -ReportType HTML -Path Site\GPO.html 
+        Get-GPOReport -All -ReportType HTML -Path Site\GPO.html 
     }
     Write-Progress -Completed True
 }
@@ -113,7 +113,7 @@ function CreateNavigation(){
                 <a href=`"Network.html`"> Network </a>
             </th> 
 "@
-    if(ActiveDirectory){
+    if($ActiveDirectory){
         $ActiveDirectoryInject = @"
             <th>
                 <a href=`"ActiveDirectory.html`"> Active Directory </a>
@@ -208,7 +208,7 @@ function GenerateReport(){
     Add-Content -Value $HTMLEnd -Path Site\Network.html
 
     if($ActiveDirectory){
-    # Create Process Information Page
+    # Create Active Directory Information Page
     Out-File -InputObject $HTMLStart -FilePath Site\ActiveDirectory.html
     Add-Content -Value "<h1> Domain </h1>" -Path Site\ActiveDirectory.html
     Add-Content -Value $ActiveDirectoryDomain -Path Site\ActiveDirectory.html
