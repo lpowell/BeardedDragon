@@ -50,7 +50,7 @@ function GatherInfo(){
     $global:NetFull = Get-NetTCPConnection | Select-Object State, LocalAddress, LocalPort, RemoteAddress, RemotePort, OwningProcess, CreationTime | ConvertTo-HTML -Fragment -As Table
     
     # Could this be a single array? Yes.
-    if(Get-WindowsFeature -Name AD-Domain-Services){
+    if(Get-WindowsFeature -Name AD-Domain-Services | ? Installed){
         $global:ActiveDirectory = $True
         Write-Progress -Activity "Gathering Active Directory Information..."
         $global:ActiveDirectoryDomain = get-addomain | ConvertTo-HTML -Fragment -As Table
@@ -77,12 +77,21 @@ function GatherInfo(){
     }
 
     # IIS
-    if(Get-WindowsFeature -Name Web-Server){
+    if(Get-WindowsFeature -Name Web-Server | ? Installed){
         $global:IIS = $True
-        $global:IISSites = (Get-IISServerManager).Sites | ConvertTo-HTML -Fragment -As Table
+        $global:IISSites = Get-WebSiteInfo | ConvertTo-HTML -Fragment -As Table
     }
 
     Write-Progress -Completed True
+}
+
+Function Get-WebSiteInfo
+{
+    $WebSite = Get-IISSite | Select-Object -property @{Name='Name';Expression={$_.Name -join '; '}},
+                                            @{Name='ID';Expression={$_.ID -join '; '}},
+                                            @{Name='State';Expression={$_.State -join '; '}},
+                                            @{Name='Bindings';Expression={$_.Bindings -join '; '}}
+Return $WebSite
 }
 
 function CreateTemplate(){
