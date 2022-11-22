@@ -69,8 +69,9 @@ function GatherInfo(){
         # $locc = $loc+"\Site"
 
         # Screw PS, I do what I want
-        Get-GPOReport -All -ReportType HTML -Path $loc\GPO.html
-        Copy-Item -Path GPO.html -Destination Site\GPO.html
+        Invoke-Command -ScriptBlock {Get-GPOReport -All -ReportType HTML -Path $loc\GPO.html}
+	#Out-File -InputObject $a -FilePath Site\GPO.html
+        
     }
     Write-Progress -Completed True
 }
@@ -261,6 +262,12 @@ CreateTemplate
 CreateNavigation
 CreateAuthorBlock
 GenerateReport
+
+# Need to move GPO now, because it takes too long to generate to move it when it's created 
+# Tho I'm not sure why it couldn't just be put in the right dir to begin with
+# PowerShell ¯\_ (?)_/¯
+# Keeping it as an inv-cmd just to be safe too 
+Invoke-Command -ScriptBlock {Copy-Item -Path $loc\GPO.html -Destination $loc\Site\GPO.html}
 CreateBackup
 
 # Open Index
