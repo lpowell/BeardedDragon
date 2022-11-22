@@ -51,6 +51,7 @@ function GatherInfo(){
     
     # Could this be a single array? Yes.
     if(Get-WindowsFeature -Name AD-Domain-Services | ? Installed){
+        write-host "wack yo"
         $global:ActiveDirectory = $True
         Write-Progress -Activity "Gathering Active Directory Information..."
         $global:ActiveDirectoryDomain = get-addomain | ConvertTo-HTML -Fragment -As Table
