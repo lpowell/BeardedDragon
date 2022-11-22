@@ -33,6 +33,8 @@ function CreateBackup(){
 
 function GatherInfo(){
     # Load Info together, its slooooooooooooowwwwwwwwwwwwwww
+    Write-Progress -Activity "Gathering Device Information..."
+    $global:DeviceInfo = Get-CimInstance CIM_ComputerSystem 
     Write-Progress -Activity "Gathering Process Information..."
     $global:ProcessInformation = Get-CimInstance Win32_Process | Select-Object ProcessName, Path, CreationDate, CommandLine | ConvertTo-HTML -Fragment -As Table
     Write-Progress -Activity "Gather Service Information..."
@@ -73,6 +75,13 @@ function GatherInfo(){
 	#Out-File -InputObject $a -FilePath Site\GPO.html
         
     }
+
+    # IIS
+    if(Get-WindowsFeature -Name Web-Server){
+        $global:IIS = $True
+        $global:IISSites = (Get-IISServerManager).Sites | ConvertTo-HTML -Fragment -As Table
+    }
+
     Write-Progress -Completed True
 }
 
@@ -140,6 +149,14 @@ function CreateNavigation(){
 "@
         $NavStart += $ActiveDirectoryInject
     }
+    if($IIS){
+        $IISInject = @"
+            <th>
+                <a href=`"IIS.html`"> IIS </a>
+            </th>
+"@
+        $NavStart += $IISInject
+    }
     $NavStart += @"
 
         </tr>
@@ -150,7 +167,6 @@ function CreateNavigation(){
 
 function CreateAuthorBlock(){
     # Create the author and device info block
-    $global:DeviceInfo = Get-CimInstance CIM_ComputerSystem 
     $AuthBlock = @"
     <!--
         Author: {0} 
@@ -225,18 +241,26 @@ function GenerateReport(){
 
     if($ActiveDirectory){
     # Create Active Directory Information Page
-    Out-File -InputObject $HTMLStart -FilePath Site\ActiveDirectory.html
-    Add-Content -Value "<h1> Domain </h1>" -Path Site\ActiveDirectory.html
-    Add-Content -Value $ActiveDirectoryDomain -Path Site\ActiveDirectory.html
-    Add-Content -Value "<h1> Users </h1>" -Path Site\ActiveDirectory.html
-    Add-Content -Value $ActiveDirectoryUser -Path Site\ActiveDirectory.html
-    Add-Content -Value "<h1> Groups </h1>" -Path Site\ActiveDirectory.html
-    Add-Content -Value $ActiveDirectoryGroup -Path Site\ActiveDirectory.html
-    Add-Content -Value "<h1> Computers </h1>" -Path Site\ActiveDirectory.html
-    Add-Content -Value $ActiveDirectoryComputer -Path Site\ActiveDirectory.html
-    Add-Content -Value $HTMLEnd -Path Site\Network.html
+        Out-File -InputObject $HTMLStart -FilePath Site\ActiveDirectory.html
+        Add-Content -Value "<h1> Domain </h1>" -Path Site\ActiveDirectory.html
+        Add-Content -Value $ActiveDirectoryDomain -Path Site\ActiveDirectory.html
+        Add-Content -Value "<h1> Users </h1>" -Path Site\ActiveDirectory.html
+        Add-Content -Value $ActiveDirectoryUser -Path Site\ActiveDirectory.html
+        Add-Content -Value "<h1> Groups </h1>" -Path Site\ActiveDirectory.html
+        Add-Content -Value $ActiveDirectoryGroup -Path Site\ActiveDirectory.html
+        Add-Content -Value "<h1> Computers </h1>" -Path Site\ActiveDirectory.html
+        Add-Content -Value $ActiveDirectoryComputer -Path Site\ActiveDirectory.html
+        Add-Content -Value $HTMLEnd -Path Site\Network.html
     }
 
+    if($IIS){
+        # IIS Info
+        Out-File -InputObject $HTMLStart -FilePath Site\IIS.html
+        Add-Content -Value $IISSites -Path Site\IIS.html
+        Add-Content -Value $HTMLEnd -Path Site\IIS.html
+
+
+    }
 # Finish index 
     $HTMLStart += $HTMLEnd
 
