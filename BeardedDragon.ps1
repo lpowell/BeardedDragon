@@ -74,12 +74,14 @@ function GatherInfo(){
         Invoke-Command -ScriptBlock {Get-GPOReport -All -ReportType HTML -Path $loc\GPO.html}
 	#Out-File -InputObject $a -FilePath Site\GPO.html
         
+    }else{
+        $global:ActiveDirectory = $False
     }
 
     # IIS
     if(Get-WindowsFeature -Name Web-Server | ? Installed){
         $global:IIS = $True
-        $WebSite = Get-ChildItem IIS:\Sites | Select-Object -property @{Name='Name';Expression={$_.Name -join '; '}},
+        $WebSite = Get-IISSite | Select-Object -property @{Name='Name';Expression={$_.Name -join '; '}},
                                                 @{Name='ID';Expression={$_.ID -join '; '}},
                                                 @{Name='State';Expression={$_.State -join '; '}},
                                                 @{Name='Bindings';Expression={$_.Bindings -join '; '}},
