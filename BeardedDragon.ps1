@@ -35,7 +35,7 @@ function GatherInfo(){
     # Load Info together, its slooooooooooooowwwwwwwwwwwwwww
     Write-Progress -Activity "Gathering Device Information..."
     $global:DeviceInfo = Get-CimInstance CIM_ComputerSystem 
-    $global:DeviceFeatures = Get-WindowsFeature | Where Installed | Select-Object DispalyName, Name, Path, Description | ConvertTo-HTML -Fragment -As Table
+    $global:DeviceFeatures = Get-WindowsFeature | Where Installed | Select-Object DisplayName, Name, Path, Description | ConvertTo-HTML -Fragment -As Table
     Write-Progress -Activity "Gathering Process Information..."
     $global:ProcessInformation = Get-CimInstance Win32_Process | Select-Object ProcessName, Path, CreationDate, CommandLine | ConvertTo-HTML -Fragment -As Table
     Write-Progress -Activity "Gather Service Information..."
