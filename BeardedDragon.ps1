@@ -207,7 +207,7 @@ function CreateAuthorBlock(){
         <h4> Domain: {4} </h4>
         <h4> User: {5} </h4>
     </div>
-"@ -f $Name, $Device, $Competition, $DeviceInfo.Name, $DeviceInfo.Domain, $DeviceInfo.UserName
+"@ -f $Name, $Device, $Competition, $DeviceInfo.Name, $DeviceInfo.Domain, $env:UserName
     Add-Content -Value $AuthBlock -Path Site\header.html
 }
 
@@ -298,6 +298,25 @@ function GenerateReport(){
     $HTMLStart += $AddedContent
     $HTMLStart += $HTMLEnd
 #>
+
+    $HTMLStart += @"
+    <div id=indexinfo>
+        <h1> Roles </h1>
+            <table>
+                <tr> 
+                    <th> Server Roles </th>
+                </tr>
+"@
+    ForEach($x in ($DeviceInfo | Select-Object -ExpandProperty Roles)){
+        HTMLStart += @"
+                <tr>
+                    <th> {0} </th>
+                </tr>
+"@ -f $x
+    }
+    $HTMLStart += @"
+            </table>
+"@
     $HTMLStart += $HTMLEnd
 
 Out-File -InputObject $HTMLStart -FilePath Site\Index.html
