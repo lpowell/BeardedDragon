@@ -35,7 +35,7 @@ function GatherInfo(){
     # Load Info together, its slooooooooooooowwwwwwwwwwwwwww
     Write-Progress -Activity "Gathering Device Information..."
     $global:DeviceInfo = Get-CimInstance CIM_ComputerSystem 
-    $global:DeviceFeatures = Get-WindowsFeature | Where Installed
+    $global:DeviceFeatures = Get-WindowsFeature | Where Installed | Select-Object DispalyName, Name, Path, Description | ConvertTo-HTML -Fragment -As Table
     Write-Progress -Activity "Gathering Process Information..."
     $global:ProcessInformation = Get-CimInstance Win32_Process | Select-Object ProcessName, Path, CreationDate, CommandLine | ConvertTo-HTML -Fragment -As Table
     Write-Progress -Activity "Gather Service Information..."
@@ -316,18 +316,8 @@ function GenerateReport(){
 
 			 		</ul>
                 <h1> Features </h1>
-                    <ul>
 "@
-    ForEach($x in ($DeviceFeatures | Select-Object DisplayName)){
-    $HTMLStart += @"
-
-                            <li> {0} </li>
-"@ -f $x
-    }
-    $HTMLStart += @"
-
-                    </ul>
-"@
+    $HTMLStart += $DeviceFeatures
     $HTMLStart += $HTMLEnd
 
 Out-File -InputObject $HTMLStart -FilePath Site\Index.html
