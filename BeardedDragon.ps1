@@ -53,10 +53,11 @@ function GatherInfo(){
     if(Get-WindowsFeature -Name AD-Domain-Services | ? Installed){
         $global:ActiveDirectory = $True
         Write-Progress -Activity "Gathering Active Directory Information..."
-        $global:ActiveDirectoryDomain = get-addomain | ConvertTo-HTML -Fragment -As Table
-        $global:ActiveDirectoryUser = get-aduser -Filter * | ConvertTo-HTML -Fragment -As Table
-        $global:ActiveDirectoryComputer = get-adcomputer -Filter * | ConvertTo-HTML -Fragment -As Table
-        $global:ActiveDirectoryGroup = get-adgroup -Filter * | ConvertTo-HTML -Fragment -As Table
+        $global:ActiveDirectoryDomain = get-addomain | Select Forest, InfrastructureMaster, NetBIOSName, DomainMode, DomainSID| ConvertTo-HTML -Fragment -As Table
+        $global:ActiveDirectoryUser = get-aduser -Filter * | Select UserPrincipleName, Name, DistinguishedName, Enabled, SID | ConvertTo-HTML -Fragment -As Table
+        $global:ActiveDirectoryComputer = get-adcomputer -Filter * | Select Name, DistinguishedName, DNSHostName, Enabled, SID | ConvertTo-HTML -Fragment -As Table
+        $global:ActiveDirectoryGroup = get-adgroup -Filter * | Select Name, DistinguishedName, GroupCategory, GroupScope, SID | ConvertTo-HTML -Fragment -As Table
+        $global:ActiveDirectoryOU = Get-ADOrganizationalUnit -Filter * | Select Name, DistinguishedName, LinkedGroupPolicyObjects, ObjectGUID | ConvertTo-HTML -Fragment -As Table
 
         # begin weird -Path is not relative for some reason fix
          $loc = (Get-Location).Path 
@@ -259,6 +260,8 @@ function GenerateReport(){
         Add-Content -Value $ActiveDirectoryUser -Path Site\ActiveDirectory.html
         Add-Content -Value "<h1> Groups </h1>" -Path Site\ActiveDirectory.html
         Add-Content -Value $ActiveDirectoryGroup -Path Site\ActiveDirectory.html
+        Add-Content -Value "<h1> Organizational Units </h1>" -Path Site\ActiveDirectory.html
+        Add-Content -Value $ActiveDirectoryOU -Path Site\ActiveDirectory.html
         Add-Content -Value "<h1> Computers </h1>" -Path Site\ActiveDirectory.html
         Add-Content -Value $ActiveDirectoryComputer -Path Site\ActiveDirectory.html
         Add-Content -Value $HTMLEnd -Path Site\Network.html
@@ -302,6 +305,8 @@ GenerateReport
 # Tho I'm not sure why it couldn't just be put in the right dir to begin with
 # PowerShell ¯\_ (?)_/¯
 # Keeping it as an inv-cmd just to be safe too 
+# lol this still isn't working
+# Update: sometimes it works
 Invoke-Command -ScriptBlock {Copy-Item -Path $loc\GPO.html -Destination $loc\Site\GPO.html}
 CreateBackup
 
