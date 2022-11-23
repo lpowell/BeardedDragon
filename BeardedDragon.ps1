@@ -54,10 +54,10 @@ function GatherInfo(){
         $global:ActiveDirectory = $True
         Write-Progress -Activity "Gathering Active Directory Information..."
         $global:ActiveDirectoryDomain = get-addomain | Select Forest, InfrastructureMaster, NetBIOSName, DomainMode, DomainSID| ConvertTo-HTML -Fragment -As Table
-        $global:ActiveDirectoryUser = get-aduser -Filter * | Select UserPrincipleName, Name, DistinguishedName, Enabled, SID | ConvertTo-HTML -Fragment -As Table
+        $global:ActiveDirectoryUser = LocalGet-ADUser | ConvertTo-HTML -Fragment -As Table
         $global:ActiveDirectoryComputer = get-adcomputer -Filter * | Select Name, DistinguishedName, DNSHostName, Enabled, SID | ConvertTo-HTML -Fragment -As Table
         $global:ActiveDirectoryGroup = get-adgroup -Filter * | Select Name, DistinguishedName, GroupCategory, GroupScope, SID | ConvertTo-HTML -Fragment -As Table
-        $global:ActiveDirectoryOU = Get-ADOrganizationalUnit -Filter * | Select Name, DistinguishedName, LinkedGroupPolicyObjects, ObjectGUID | ConvertTo-HTML -Fragment -As Table
+        $global:ActiveDirectoryOU = LocalGet-ADOU | ConvertTo-HTML -Fragment -As Table
 
         # begin weird -Path is not relative for some reason fix
          $loc = (Get-Location).Path 
@@ -95,6 +95,23 @@ Function Get-WebSiteInfo
                                             @{Name='State';Expression={$_.State -join '; '}},
                                             @{Name='Bindings';Expression={$_.Bindings -join '; '}}
 Return $WebSite
+}
+
+Function LocalGet-ADUser{
+    $ADOU = Get-ADUser -Filter * | Select-Object -property @{Name='UserPrincipleName';Expression={$_.UserPrincipleName -join '; '}},
+                                                                @{Name='Name';Expression={$_.Name -join '; '}},
+                                                                @{Name='DistinguishedName';Expression={$_.DistinguishedName -join '; '}},
+                                                                @{Name='Enabled';Expression={$_.Enabled -join '; '}},
+                                                                @{Name='SID';Expression={$_.SID -join '; '}}
+    return $ADOU
+}
+
+Function LocalGet-ADOU{
+    $ADOU = Get-ADOrganizationalUnit -Filter * | Select-Object -property @{Name='Name';Expression={$_.Name -join '; '}},
+                                                                @{Name='DistinguishedName';Expression={$_.DistinguishedName -join '; '}},
+                                                                @{Name='LinkedGroupPolicyObjects';Expression={$_.LinkedGroupPolicyObjects -join '; '}},
+                                                                @{Name='ObjectGUID';Expression={$_.ObjectGUID -join '; '}}
+    return $ADOU
 }
 
 function CreateTemplate(){
@@ -256,14 +273,14 @@ function GenerateReport(){
         Out-File -InputObject $HTMLStart -FilePath Site\ActiveDirectory.html
         Add-Content -Value "<h1> Domain </h1>" -Path Site\ActiveDirectory.html
         Add-Content -Value $ActiveDirectoryDomain -Path Site\ActiveDirectory.html
-        Add-Content -Value "<h1> Users </h1>" -Path Site\ActiveDirectory.html
-        Add-Content -Value $ActiveDirectoryUser -Path Site\ActiveDirectory.html
-        Add-Content -Value "<h1> Groups </h1>" -Path Site\ActiveDirectory.html
-        Add-Content -Value $ActiveDirectoryGroup -Path Site\ActiveDirectory.html
-        Add-Content -Value "<h1> Organizational Units </h1>" -Path Site\ActiveDirectory.html
-        Add-Content -Value $ActiveDirectoryOU -Path Site\ActiveDirectory.html
         Add-Content -Value "<h1> Computers </h1>" -Path Site\ActiveDirectory.html
         Add-Content -Value $ActiveDirectoryComputer -Path Site\ActiveDirectory.html
+        Add-Content -Value "<h1> Users </h1>" -Path Site\ActiveDirectory.html
+        Add-Content -Value $ActiveDirectoryUser -Path Site\ActiveDirectory.html
+        Add-Content -Value "<h1> Organizational Units </h1>" -Path Site\ActiveDirectory.html
+        Add-Content -Value $ActiveDirectoryOU -Path Site\ActiveDirectory.html
+        Add-Content -Value "<h1> Groups </h1>" -Path Site\ActiveDirectory.html
+        Add-Content -Value $ActiveDirectoryGroup -Path Site\ActiveDirectory.html
         Add-Content -Value $HTMLEnd -Path Site\Network.html
     }
 
@@ -275,7 +292,12 @@ function GenerateReport(){
 
 
     }
-# Finish index 
+# Finish index
+# Add to Index example 
+<#
+    $HTMLStart += $AddedContent
+    $HTMLStart += $HTMLEnd
+#>
     $HTMLStart += $HTMLEnd
 
 Out-File -InputObject $HTMLStart -FilePath Site\Index.html
