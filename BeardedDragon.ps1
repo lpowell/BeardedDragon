@@ -318,14 +318,14 @@ function GenerateReport(){
                 <h1> Features </h1>
                     <ul>
 "@
-    ForEach($x in ($DeviceFeatures)){
+    ForEach($x in ($DeviceFeatures | Select-Object DisplayName)){
     $HTMLStart += @"
 
                             <li> {0} </li>
 "@ -f $x
     }
     $HTMLStart += @"
-    
+
                     </ul>
 "@
     $HTMLStart += $HTMLEnd
