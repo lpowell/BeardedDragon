@@ -98,7 +98,7 @@ Return $WebSite
 }
 
 Function LocalGet-ADUser{
-    $ADOU = Get-ADUser -Filter * | Select-Object -property @{Name='UserPrincipleName';Expression={$_.UserPrincipleName -join '; '}},
+    $ADOU = Get-ADUser -Filter * | Select-Object -property @{Name='SamAccountName';Expression={$_.SAMAccountName -join '; '}},
                                                                 @{Name='Name';Expression={$_.Name -join '; '}},
                                                                 @{Name='DistinguishedName';Expression={$_.DistinguishedName -join '; '}},
                                                                 @{Name='Enabled';Expression={$_.Enabled -join '; '}},
@@ -173,7 +173,7 @@ function CreateNavigation(){
                 <a href=`"ActiveDirectory.html`"> Active Directory </a>
             </th>
             <th>
-                <a href=`"GPO.html`"> Group Policy </a>
+                <a href=`"GPO.html`" target="_blank"> Group Policy </a>
             </th>
 "@
         $NavStart += $ActiveDirectoryInject
