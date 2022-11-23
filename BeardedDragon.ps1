@@ -124,7 +124,7 @@ function CreateTemplate(){
         #Device {position: absolute; top: 2%; left: 2%; padding: 0px 0px;}
         #Author { float: left; padding: 0px 100px; }
         #Device, #Author { display: inline;}
-        #Content { float: center; top: %5; clear:both;} 
+        #Content { float: center; top: %5; clear:both; text-align:center;} 
         a:link { color: #000000;}
         a:visited { color: #000000;}
         h1, h5, th { text-align: center; font-family: Segoe UI;}
@@ -136,6 +136,7 @@ function CreateTemplate(){
         p { text-align: center;}
         .Summary { margin: auto; overflow: hidden;}
         iframe { margin: auto; width: 1200; height: 400; display:block; border: 0px;}
+        ul { display: inline-block; text-align: left;}
     </style>
 
 '@ +"    <h1> Enumeration Started $(Get-Date) </h1>"
@@ -300,22 +301,20 @@ function GenerateReport(){
 #>
 
     $HTMLStart += @"
-    <div id=indexinfo>
-        <h1> Roles </h1>
-            <table>
-                <tr> 
-                    <th> Server Roles </th>
-                </tr>
+
+        		<h1> Roles </h1>
+					<ul class=myul>
 "@
     ForEach($x in ($DeviceInfo | Select-Object -ExpandProperty Roles)){
-        HTMLStart += @"
-                <tr>
-                    <th> {0} </th>
-                </tr>
+        $HTMLStart += @"
+
+                    		<li> {0} </li>
 "@ -f $x
     }
     $HTMLStart += @"
-            </table>
+
+			 		</ul>
+
 "@
     $HTMLStart += $HTMLEnd
 
