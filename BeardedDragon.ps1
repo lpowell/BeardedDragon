@@ -86,6 +86,12 @@ function GatherInfo(){
         $global:IISSites = Get-WebSiteInfo | ConvertTo-HTML -Fragment -As Table
     }
 
+    if(Get-WindowsFeature -Name DNS | ? Installed){
+        Write-Progress -Activity "Gathering DNS Information..."
+        $global:DNS = $True
+        $global:DNSZone = Get-DnsServerZone
+    }
+
     Write-Progress -Completed True
 }
 
@@ -187,6 +193,14 @@ function CreateNavigation(){
             </th>
 "@
         $NavStart += $IISInject
+    }
+    if($DNS){
+        $DNsInject = @"
+            <th>
+                <a href=`"DNS.html`"> DNS </a>
+            </th>
+"@
+        $NavStart += $DNsInject
     }
     $NavStart += @"
 
@@ -291,8 +305,20 @@ function GenerateReport(){
         Out-File -InputObject $HTMLStart -FilePath Site\IIS.html
         Add-Content -Value $IISSites -Path Site\IIS.html
         Add-Content -Value $HTMLEnd -Path Site\IIS.html
+    }
 
-
+    if($DNS){
+        # DNS 
+        Out-File -InputObject $HTMLStart -FilePAth: Site\DNS.html
+        Foreach($x in $DNSZone){
+            $DNSOut = Get-DNSServerResourceRecord -ZoneName $x.ZoneName | Select HostName, RecordType, DistinguishedName | ConvertTo-Html -Fragment -As Table
+            $DNSName = @"
+            <h1> {0} </h1>
+"@ -f $x.ZoneName
+            Add-Content -Value $DNSName -Path Site\DNS.html
+            Add-Content -Value $DNSOut -Path Site\DNS.html
+        }
+        Add-Content -Value $HTMLEnd -Path Site\DNS.html
     }
 # Finish index
 # Add to Index example 
